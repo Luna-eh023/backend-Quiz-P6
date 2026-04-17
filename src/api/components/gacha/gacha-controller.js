@@ -1,4 +1,4 @@
-import service from './gacha-service';
+const service = require('./gacha-service');
 
 async function play(req, res, next) {
   try {
@@ -22,6 +22,7 @@ async function history(req, res, next) {
     next(err);
   }
 }
+
 async function prizes(req, res, next) {
   try {
     res.json(await service.prizes());
@@ -38,4 +39,10 @@ async function winners(req, res, next) {
   }
 }
 
-export { play, history, prizes, winners };
+// Ubah dari ES Modules (export) menjadi CommonJS (module.exports)
+module.exports = {
+  play,
+  history,
+  prizes,
+  winners,
+};

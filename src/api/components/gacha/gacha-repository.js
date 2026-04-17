@@ -2,11 +2,14 @@ const { Gacha, Prize } = require('../../../models');
 
 async function getTodayCount(userId) {
   const start = new Date();
-  start.setHours(0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
 
   return Gacha.countDocuments({
     userId,
-    createdAt: { $gte: start },
+    createdAt: { $gte: start, $lte: end },
   });
 }
 
@@ -21,7 +24,13 @@ async function saveResult(data) {
 }
 
 async function addWinner(id) {
-  return Prize.updateOne({ _id: id }, { $inc: { winnerCount: 1 } });
+  // Atomic update menggunakan findOneAndUpdate untuk mencegah race condition.
+  // Akan mengembalikan null jika di detik yang sama kuota sudah penuh oleh proses lain.
+  return Prize.findOneAndUpdate(
+    { _id: id, $expr: { $lt: ['$winnerCount', '$quota'] } },
+    { $inc: { winnerCount: 1 } },
+    { new: true }
+  );
 }
 
 async function getHistory(userId) {

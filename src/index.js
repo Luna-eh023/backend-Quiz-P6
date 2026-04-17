@@ -1,14 +1,12 @@
-const mongoose = require('mongoose');
-
 const { env, port } = require('./core/config');
 const logger = require('./core/logger')('app');
 const server = require('./core/server');
+const { seedPrizes } = require('./seeds/prize-seeder');
 
-const gachaSchema = require('./gacha-schema');
-const prizeSchema = require('./prize-schema');
-
-const Gacha = mongoose.model('Gacha', gachaSchema);
-const Prize = mongoose.model('Prize', prizeSchema);
+// Mongoose akan otomatis memasukkan antrean (buffer) query seperti seedPrizes
+// sampai koneksi database berhasil terbuka dari src/models/index.js.
+// Jadi, aman memanggil fungsi ini di sini.
+seedPrizes();
 
 const app = server.listen(port, (err) => {
   if (err) {
@@ -31,7 +29,4 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-module.exports = {
-  Gacha,
-  Prize,
-};
+module.exports = app;

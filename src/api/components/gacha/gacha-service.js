@@ -1,10 +1,15 @@
 const repo = require('./gacha-repository');
+const { errorResponder, errorTypes } = require('../../../core/errors');
 
 async function play(userId, userName) {
   const count = await repo.getTodayCount(userId);
 
   if (count >= 5) {
-    throw new Error('Limit gacha 5x per hari sudah habis');
+    // Menggunakan custom error handler yang sudah tersedia di core project
+    throw errorResponder(
+      errorTypes.FORBIDDEN,
+      'Limit gacha 5x per hari sudah habis'
+    );
   }
 
   const availablePrizes = await repo.getAvailablePrize();
@@ -12,10 +17,15 @@ async function play(userId, userName) {
   let result = null;
 
   if (Math.random() < 0.4 && availablePrizes.length > 0) {
-    result =
+    const randomPrize =
       availablePrizes[Math.floor(Math.random() * availablePrizes.length)];
 
-    await repo.addWinner(result.id);
+    // Cek apakah update atomic berhasil (berjaga-jaga jika kuota diserobot user lain)
+    const updatedPrize = await repo.addWinner(randomPrize.id);
+
+    if (updatedPrize) {
+      result = randomPrize;
+    }
   }
 
   await repo.saveResult({
@@ -42,6 +52,7 @@ function maskName(name) {
     )
     .join(' ');
 }
+
 async function prizes() {
   const data = await repo.getPrizes();
 
